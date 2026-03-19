@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>CAE 2026 · HCHM</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0e1117;--paper:#f5f2eb;--p2:#ede9df;--rule:#c8c2b4;
+  --acc:#1a3a2a;--gr:#2d6a4f;--rd:#9b2226;--am:#7b5e00;--mu:#6b6456;--w:#fff;
+  --nav:58px;
+  --serif:'DM Serif Display',serif;--mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;display:flex;flex-direction:column}
+
+/* HEADER */
+.hdr{background:var(--acc);color:var(--w);padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top,0px));
+  display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0;z-index:50}
+.hl{display:flex;align-items:center;gap:9px}
+.logo{width:30px;height:30px;background:rgba(255,255,255,.15);border-radius:7px;
+  display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.hdr h1{font-family:var(--serif);font-size:16px;font-weight:400;line-height:1.2;color:var(--w)}
+.hdr h1 em{font-style:italic;opacity:.65}
+.hdr small{font-size:9px;opacity:.4;font-family:var(--mono);display:block;margin-top:1px}
+.period-sel{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
+  border-radius:6px;padding:5px 9px;font-family:var(--mono);font-size:11px;
+  color:var(--w);-webkit-appearance:none;appearance:none;cursor:pointer}
+.period-sel option{background:var(--acc)}
+
+/* SCROLL */
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  padding:12px 12px calc(var(--nav) + 10px + env(safe-area-inset-bottom,0px))}
+
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--acc);
+  border-top:1px solid rgba(255,255,255,.1);display:flex;
+  height:calc(var(--nav) + env(safe-area-inset-bottom,0px));
+  padding-bottom:env(safe-area-inset-bottom,0px);z-index:100}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  cursor:pointer;color:rgba(255,255,255,.4);font-size:9px;font-weight:500;padding:5px 2px;transition:color .15s}
+.ni svg{width:20px;height:20px;stroke-width:1.8;fill:none;stroke:currentColor}
+.ni.on{color:var(--w)}
+
+/* SCREENS */
+.sc{display:none}.sc.on{display:block}
+
+/* SECTION LABEL */
+.sl{font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--mu);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.sl::after{content:'';flex:1;height:1px;background:var(--rule)}
+
+/* KPI GRID */
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.kpi{background:var(--w);border:1px solid var(--rule);border-radius:11px;padding:13px;position:relative;overflow:hidden}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi.b::after{background:#4a9eff}.kpi.g::after{background:var(--gr)}
+.kpi.a::after{background:var(--am)}.kpi.r::after{background:var(--rd)}
+.kl{font-size:9px;text-transform:uppercase;letter-spacing:.7px;color:var(--mu);margin-bottom:5px}
+.kv{font-size:22px;font-weight:700;font-family:var(--mono);line-height:1;color:var(--ink)}
+.ks{font-size:9px;color:var(--mu);margin-top:3px}
+
+/* INDICATORS */
+.inds{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.ind{background:var(--w);border:1px solid var(--rule);border-radius:11px;padding:12px 10px;position:relative;overflow:hidden}
+.ind .tag{font-family:var(--mono);font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--mu);margin-bottom:7px}
+.ind .pct{font-family:var(--serif);font-size:26px;line-height:1;letter-spacing:-1px;margin-bottom:2px}
+.ind.ok .pct{color:var(--gr)}.ind.lo .pct{color:var(--rd)}.ind.wa .pct,.ind.neu .pct{color:var(--am)}
+.ind .frac{font-family:var(--mono);font-size:9px;color:var(--mu);margin-bottom:7px;line-height:1.3}
+.ind .ml{font-size:9px;color:var(--mu);display:flex;align-items:center;gap:4px;padding-top:7px;border-top:1px solid var(--p2);line-height:1.3}
+.ind .mn{font-size:8px;color:var(--mu);font-style:italic;margin-top:3px;line-height:1.3}
+.dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.ok .dot{background:var(--gr)}.lo .dot{background:var(--rd)}.wa .dot,.neu .dot{background:var(--am)}
+.gauge{position:absolute;top:10px;right:8px;width:34px;height:34px}
+.gauge svg{width:100%;height:100%}
+.gbg{fill:none;stroke:var(--p2);stroke-width:3.5}
+.gf{fill:none;stroke-width:3.5;stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%}
+.ok .gf{stroke:var(--gr)}.lo .gf{stroke:var(--rd)}.wa .gf,.neu .gf{stroke:var(--am)}
+
+/* REM CARDS */
+.rems{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.rc{background:var(--p2);border:1px solid var(--rule);border-radius:9px;padding:10px 11px}
+.rn{font-family:var(--mono);font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--mu);margin-bottom:6px}
+.rr{display:flex;justify-content:space-between;font-size:11px;padding:2px 0;border-bottom:1px dashed var(--rule)}
+.rr:last-of-type{border:none}.rk{color:var(--mu)}.rv{font-family:var(--mono);font-size:11px;font-weight:500}
+.rtot{display:flex;justify-content:space-between;padding:4px 0 0;margin-top:2px;border-top:1px solid var(--rule);font-size:11px;font-weight:600}
+.rtot .rv{font-family:var(--mono);color:var(--acc)}
+
+/* FILTER BAR */
+.fbar{background:var(--p2);border:1px solid var(--rule);border-radius:9px;
+  padding:10px 11px;display:flex;gap:8px;flex-direction:column;margin-bottom:10px}
+.fg{display:flex;flex-direction:column;gap:3px}
+.fg label{font-size:9px;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;font-weight:500}
+select,input[type=text]{background:var(--w);border:1px solid var(--rule);color:var(--ink);
+  padding:9px 11px;border-radius:8px;font-size:14px;font-family:var(--sans);
+  outline:none;-webkit-appearance:none;appearance:none;width:100%}
+select:focus,input:focus{border-color:var(--acc)}
+.fr{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.rbtn{padding:8px 14px;background:transparent;border:1px solid var(--rule);border-radius:8px;
+  font-size:12px;color:var(--mu);cursor:pointer;font-family:var(--sans);height:40px;white-space:nowrap}
+.rbtn:active{background:var(--p2)}
+.fcount{font-family:var(--mono);font-size:10px;color:var(--mu)}
+
+/* CARD */
+.card{background:var(--w);border:1px solid var(--rule);border-radius:11px;overflow:hidden;margin-bottom:12px}
+.card-hd{padding:11px 13px;border-bottom:1px solid var(--rule);display:flex;align-items:center;
+  justify-content:space-between;gap:8px;flex-wrap:wrap}
+.card-hd h3{font-size:14px;font-weight:600}
+.dl-btns{display:flex;gap:6px;flex-wrap:wrap}
+.dlb{padding:6px 12px;background:var(--acc);color:var(--w);border:none;border-radius:6px;
+  font-size:11px;font-weight:500;cursor:pointer;font-family:var(--sans);white-space:nowrap}
+.dlb.sec{background:#4a7c5e}
+
+/* TABLE */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse}
+thead th{background:var(--acc);color:rgba(255,255,255,.75);padding:8px 11px;text-align:left;
+  font-family:var(--mono);font-size:9px;letter-spacing:.8px;text-transform:uppercase;
+  white-space:nowrap;font-weight:400;cursor:pointer;user-select:none}
+thead th:hover{color:var(--w)}
+thead th.r{text-align:right}
+tbody tr{border-bottom:1px solid var(--p2)}
+tbody tr:last-child{border:none}
+tbody tr:active{background:rgba(237,233,223,.7)}
+td{padding:8px 11px;vertical-align:middle;white-space:nowrap;font-size:13px}
+td.r{text-align:right;font-family:var(--mono);font-size:11px}
+.dim{color:var(--mu);font-size:11px}
+.mname{font-size:13px;font-weight:600}
+.mc{font-size:9px;color:var(--mu);font-family:var(--mono)}
+
+/* SPARK */
+.bw{display:flex;align-items:center;justify-content:flex-end;gap:4px}
+.bg2{width:36px;height:3px;background:var(--p2);border-radius:2px;overflow:hidden;flex-shrink:0}
+.bf{height:100%;border-radius:2px}
+.bf.ok{background:var(--gr)}.bf.wa{background:var(--am)}.bf.lo{background:var(--rd)}
+.pv{font-family:var(--mono);font-size:10px}
+.pv.ok{color:var(--gr)}.pv.wa{color:var(--am)}.pv.lo{color:var(--rd)}
+
+/* PILL */
+.pill{display:inline-block;padding:3px 8px;border-radius:4px;font-family:var(--mono);
+  font-size:9px;font-weight:500;letter-spacing:.3px;white-space:nowrap}
+.pill.ok{background:rgba(45,106,79,.1);color:var(--gr)}
+.pill.wa{background:rgba(123,94,0,.1);color:var(--am)}
+.pill.lo{background:rgba(155,34,38,.1);color:var(--rd)}
+
+/* PAGINATION */
+.pag{display:flex;align-items:center;justify-content:center;gap:5px;
+  padding:9px 12px;border-top:1px solid var(--p2);flex-wrap:wrap}
+.pbtn{background:var(--p2);border:1px solid var(--rule);color:var(--ink);
+  padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px;min-height:36px;font-family:var(--sans)}
+.pbtn.on{background:var(--acc);border-color:var(--acc);color:var(--w);font-weight:700}
+.pbtn:disabled{opacity:.3;pointer-events:none}
+.pi{font-size:10px;color:var(--mu);font-family:var(--mono);width:100%;text-align:center;margin-bottom:3px}
+.empty{text-align:center;padding:24px;color:var(--mu);font-size:13px}
+
+@keyframes fu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.an{animation:fu .3s ease both}
+
+@media(min-width:600px){
+  .kpis{grid-template-columns:repeat(4,1fr)}
+  .ind .pct{font-size:32px}
+  .fbar{flex-direction:row;flex-wrap:wrap;align-items:flex-end}
+  .fg{min-width:160px;flex:1}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hl">
+    <div class="logo">🏥</div>
+    <div>
+      <h1>Producción <em>CAE</em></h1>
+      <small>HCHM · REM A07 / A30 / A32</small>
+    </div>
+  </div>
+  <select class="period-sel" id="selPeriod" onchange="onPeriodChange()">
+    <option value="Enero">Enero 2026</option>
+  </select>
+</header>
+
+<!-- SCROLL AREA -->
+<div class="scroll" id="scroll">
+
+  <!-- ══ RESUMEN ══ -->
+  <div class="sc on" id="sc-res">
+    <div class="sl" style="margin-top:4px">Producción total</div>
+    <div class="kpis an" id="kpiBlock"></div>
+
+    <div class="sl">Indicadores Minsal</div>
+    <div class="inds" id="indsBlock"></div>
+
+    <div class="sl">Desglose REM</div>
+    <div class="rems" id="remsBlock"></div>
+  </div>
+
+  <!-- ══ ESPECIALIDADES ══ -->
+  <div class="sc" id="sc-esp">
+    <div class="fbar" style="margin-top:4px">
+      <div class="fr">
+        <div class="fg" style="flex:1">
+          <label>Especialidad REM</label>
+          <select id="eEspRem" onchange="onEspRemChange()"><option value="">Todas</option></select>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Servicio</label>
+        <select id="eEsp" onchange="filterEsp()"><option value="">Todos</option></select>
+      </div>
+      <div class="fr" style="justify-content:space-between">
+        <button class="rbtn" onclick="resetEsp()">✕ Limpiar</button>
+        <span class="fcount" id="espCount"></span>
+      </div>
+    </div>
+    <div class="card an">
+      <div class="card-hd">
+        <h3>Por Especialidad REM</h3>
+        <button class="dlb" onclick="downloadEsp()">↓ CSV</button>
+      </div>
+      <div class="tw">
+        <table>
+          <thead><tr>
+            <th onclick="sE('esp_rem')">Especialidad ↕</th>
+            <th class="r" onclick="sE('prod')">Prod. ↕</th>
+            <th class="r" onclick="sE('pct_cne')">% CNE ↕</th>
+            <th class="r">Meta</th>
+            <th class="r" onclick="sE('pct_nsp')">% NSP ↕</th>
+            <th class="r" onclick="sE('pct_altas')">% Altas ↕</th>
+            <th class="r">Meta</th>
+          </tr></thead>
+          <tbody id="tbEsp"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MÉDICOS ══ -->
+  <div class="sc" id="sc-med">
+    <div class="fbar" style="margin-top:4px">
+      <div class="fg">
+        <label>Especialidad REM</label>
+        <select id="mEspRem" onchange="onMedRemChange()"><option value="">Todas</option></select>
+      </div>
+      <div class="fg">
+        <label>Servicio</label>
+        <select id="mEsp" onchange="filterMed()"><option value="">Todos</option></select>
+      </div>
+      <div class="fg">
+        <label>Buscar médico</label>
+        <input type="text" id="sMed" placeholder="Nombre o apellido…" oninput="filterMed()">
+      </div>
+      <div class="fg">
+        <label>Estado CNE</label>
+        <select id="fCNE" onchange="filterMed()">
+          <option value="">Todos</option>
+          <option value="ok">✓ Cumple meta</option>
+          <option value="wa">⚠ Cercano</option>
+          <option value="lo">✗ Bajo meta</option>
+        </select>
+      </div>
+      <div class="fr" style="justify-content:space-between">
+        <button class="rbtn" onclick="resetMed()">✕ Limpiar</button>
+        <span class="fcount" id="medCount"></span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd">
+        <h3>Por Médico</h3>
+        <div class="dl-btns">
+          <button class="dlb" onclick="downloadMed()">↓ CSV filtro</button>
+          <button class="dlb sec" onclick="downloadFull()">↓ Base completa</button>
+        </div>
+      </div>
+      <div class="tw">
+        <table>
+          <thead><tr>
+            <th onclick="sM('esp_rem')">Esp. REM ↕</th>
+            <th onclick="sM('medico')">Médico ↕</th>
+            <th class="r" onclick="sM('produccion')">Prod. ↕</th>
+            <th class="r" onclick="sM('pct_cne')">% CNE ↕</th>
+            <th class="r">Meta</th>
+            <th class="r" onclick="sM('pct_nsp')">% NSP ↕</th>
+            <th class="r" onclick="sM('pct_altas')">% Altas ↕</th>
+            <th class="r">Meta</th>
+            <th>Estado</th>
+          </tr></thead>
+          <tbody id="tbMed"></tbody>
+        </table>
+      </div>
+      <div class="pag" id="pagMed"></div>
+    </div>
+  </div>
+
+</div><!-- /scroll -->
+
+<!-- BOTTOM NAV -->
+<nav class="bnav">
+  <div class="ni on" onclick="showSc('res',this)">
+    <svg viewBox="0 0 24 24"><rect x="3" y="13" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>
+    Resumen
+  </div>
+  <div class="ni" onclick="showSc('esp',this)">
+    <svg viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+    Especialidad
+  </div>
+  <div class="ni" onclick="showSc('med',this)">
+    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+    Médicos
+  </div>
+</nav>
+
+<script>
+// ── DATA (compact arrays) ─────────────────────────────────────
+// [esp_rem,servicios,medico,prod,cne,ctrl,nsp,citado,altas,ges,cnr7,ctr7,nsr7,cnr30,ctr30,cnr32,ctr32,nsr32]
+const RAW = {"Enero":[["Anestesiología","ANESTESIA","BELTRAN DIAZ ALEJANDRO JOSE",15,15,0,2,17,15,0,15,0,2,0,0,0,0,0],["Cardiología","CARDIOLOGIA DE AD.","BRIONES MILLAR MARIA DEL CARMEN",48,7,41,5,53,10,46,7,41,5,0,0,0,0,0],["Cardiología","CARDIOLOGIA DE AD.","CABEZAS MONSALVE ANTONIO FABIAN",40,26,14,2,42,18,4,26,14,2,0,0,0,0,0],["Cardiología","CARDIOLOGIA DE AD.","LAGOS ARRIAGADA DENISSE MACARENA",250,119,131,20,270,103,0,55,131,20,64,0,0,0,0],["Cardiología","CARDIOLOGIA DE AD.","MARIN CORREA GONZALO GREGORIO",17,5,12,0,17,0,0,0,7,0,5,5,0,0,0],["Cardiología","CARDIOLOGIA DE AD.","MEDINA GONZALEZ CLAUDIO ALEJANDRO",57,30,27,0,57,3,0,28,19,0,2,1,0,7,0],["Cardiología","CARDIOLOGIA DE AD.","MERINO FUENTES DANIEL EDUARDO JESUS",101,58,43,13,114,4,10,22,43,13,36,0,0,0,0],["Cardiología","CARDIOLOGIA DE AD.","MORALES ALVARADO JOSE MANUEL APOLO",60,29,31,6,66,0,25,29,31,6,0,0,0,0,0],["Cardiología","CARDIOLOGIA DE AD.","SAN MARTIN RIQUELME ANDRES MALAQUIAS",125,90,35,3,128,36,14,41,35,3,49,0,0,0,0],["Cardiología","CARDIOLOGIA DE AD.","SANDOVAL CONTRERAS RODRIGO ANDRES",46,20,26,3,49,8,40,20,26,3,0,0,0,0,0],["Cardiología","CARDIOLOGIA DE AD. / TRATAMIENTO ANTICOAGULANTE","PULIDO LOBO TIBAYRE ELENA",94,32,62,12,106,1,0,32,62,12,0,0,0,0,0],["Cardiología","CARDIOLOGIA INF.","CABELLO SILVA MARIA AURORA",33,12,21,7,40,10,9,12,21,7,0,0,0,0,0],["Cardiología","CARDIOLOGIA INF.","GONZALEZ MELLADO GASTON EDUARDO",61,19,42,8,69,33,12,19,42,8,0,0,0,0,0],["Cardiología","TRATAMIENTO ANTICOAGULANTE","ARRIAGADA GONZALEZ JUAN JOSE",76,8,68,13,89,0,0,8,68,13,0,0,0,0,0],["Cardiología","TRATAMIENTO ANTICOAGULANTE","GES FIGUEREDO HECTOR",580,0,580,0,580,0,0,0,580,0,0,0,0,0,0],["Cardiología","TRATAMIENTO ANTICOAGULANTE","HENRIQUEZ VILLOUTA RODRIGO ESTEBAN",59,20,39,17,76,2,0,20,39,17,0,0,0,0,0],["Cardiología","TRATAMIENTO ANTICOAGULANTE","LASSERRE CAMPOS JORGE",216,12,204,5,221,7,0,12,204,5,0,0,0,0,0],["Cardiología","TRATAMIENTO ANTICOAGULANTE","PINTO CARRASCO GREGOR EDUARDO",24,0,24,9,33,1,0,0,24,9,0,0,0,0,0],["Cardiología","TRATAMIENTO ANTICOAGULANTE","ZAVALA ULLOA CLAUDIA MARCELA",60,7,53,6,66,3,61,7,53,6,0,0,0,0,0],["Cirugía Digestiva (Alta)","CIRUGIA ADULTOS","GROSSMANN ALVAREZ MICHAEL ALEJANDRO",31,11,20,2,33,2,44,11,20,2,0,0,0,0,0],["Cirugía Digestiva (Alta)","CIRUGIA ADULTOS","JAUREGUIBERRY PABLO JAVIER",16,6,10,1,17,4,22,6,10,1,0,0,0,0,0],["Cirugía Digestiva (Alta)","CIRUGIA ADULTOS","NAUTO BELMAR SAMUEL GERMAN",27,13,14,0,27,1,0,13,14,0,0,0,0,0,0],["Cirugía Digestiva (Alta)","CIRUGIA ADULTOS","SAAVEDRA VEDIA NELIDA LETICIA",9,5,4,1,10,2,38,5,4,1,0,0,0,0,0],["Cirugía Digestiva (Alta)","CIRUGIA ADULTOS","SENLER BECERRA WILLIAMS ANDRES",14,2,12,1,15,0,12,2,12,1,0,0,0,0,0],["Cirugía Digestiva (Alta)","CIRUGIA ADULTOS","VELASQUEZ PEREZ FERNANDO GERARDO",13,5,8,1,14,2,20,5,8,1,0,0,0,0,0],["Cirugía General","CIRUGIA ADULTOS","CARVAJAL ROJAS CARLA ANDREA",27,18,9,2,29,7,0,18,9,2,0,0,0,0,0],["Cirugía General","CIRUGIA ADULTOS","FLORES BUSTOS CARLOTA FRANCISCA",50,50,0,8,58,27,0,50,0,8,0,0,0,0,0],["Cirugía General","CIRUGIA ADULTOS","HERNANDEZ SUAREZ ANGEL RAMON",12,12,0,0,12,0,12,12,0,0,0,0,0,0,0],["Cirugía General","CIRUGIA ADULTOS","LOPEZ MAYEDO FRANCISCO JAVIER",28,18,10,3,31,6,0,18,10,3,0,0,0,0,0],["Cirugía General","CIRUGIA ADULTOS","NAVARRO ORMEÑO VERONICA ANDREA",37,8,29,7,44,12,0,8,29,7,0,0,0,0,0],["Cirugía General","CIRUGIA ADULTOS","PINCHEIRA SAN MARTIN JORGE IGNACIO",14,4,10,1,15,0,0,4,10,1,0,0,0,0,0],["Cirugía General","CIRUGIA ADULTOS","RAVE CACERES SALIM MICHELL",56,40,16,7,63,35,0,40,16,7,0,0,0,0,0],["Cirugía General","CIRUGIA ADULTOS","RUBIO SILVEIRA NICOLAS",18,11,7,0,18,5,17,11,7,0,0,0,0,0,0],["Cirugía General","CIRUGIA ENDOSCOPICA","SERRANO DE ACERO ANA DELINA",1,0,1,0,1,0,7,0,1,0,0,0,0,0,0],["Cirugía General","CIRUGIA ENDOSCOPICA","TAPIA CORTES CLAUDIO ROBERTO",24,8,16,5,29,5,2,8,16,5,0,0,0,0,0],["Cirugía General","Cirugía General","GABRIELA NAVARRETE",10,10,0,0,10,0,0,0,0,0,10,0,0,0,0],["Cirugía Pediátrica","CIRUGIA INFANTIL","DELGADO MARIN NEYDA DE LA CARIDAD",51,7,44,2,53,14,0,7,44,2,0,0,0,0,0],["Cirugía Pediátrica","CIRUGIA INFANTIL","EQUIPO QUEMADOS",2,0,2,0,2,0,0,0,2,0,0,0,0,0,0],["Cirugía Pediátrica","CIRUGIA INFANTIL","FLORES TAPIA SANDRA LETICIA",41,0,41,0,41,3,0,0,41,0,0,0,0,0,0],["Cirugía Pediátrica","CIRUGIA INFANTIL","FUENTES GONZALEZ ANA KARINA",46,17,29,11,57,10,51,17,29,11,0,0,0,0,0],["Cirugía Pediátrica","CIRUGIA INFANTIL","HIDALGO TERAN DIANA GUADALUPE",102,21,81,13,115,18,0,21,81,13,0,0,0,0,0],["Cirugía Pediátrica","CIRUGIA INFANTIL","MONCADA VIDAL KAREN IVETTE",25,6,19,4,29,3,0,6,19,4,0,0,0,0,0],["Cirugía Pediátrica","CIRUGIA INFANTIL","ORTIZ BRICEÑO ANTONIO JOSE",53,31,22,7,60,27,0,31,22,7,0,0,0,0,0],["Cirugía Pediátrica","CIRUGIA INFANTIL","POBLETE MARTINEZ ANDREA PAOLA",95,40,55,15,110,37,0,40,55,15,0,0,0,0,0],["Cirugía Pediátrica","CIRUGIA INFANTIL","ZAMBRANO CHACON CARLOS ANDRES",35,11,24,1,36,6,0,11,24,1,0,0,0,0,0],["Cirugía Pediátrica","CIRUGIA INFANTIL","ZURITA ROSAL YEISMA BARTOLA",47,19,28,4,51,8,0,19,28,4,0,0,0,0,0],["Cirugía Plástica Y Reparadora","CIRUGIA PLASTICA","KARPYN BRITO ZULLYMAR KARELIM",6,3,3,0,6,2,0,3,3,0,0,0,0,0,0],["Cirugía Plástica Y Reparadora","CIRUGIA PLASTICA","MARIPANGUI DIAZ MARITZA PILAR",4,1,3,0,4,0,0,1,3,0,0,0,0,0,0],["Cirugía Vascular Periférica","CIRUGIA VASCULAR","BAIMA SOTO EDUARDO FELIPE",9,0,9,0,9,0,0,0,9,0,0,0,0,0,0],["Cirugía Vascular Periférica","CIRUGIA VASCULAR","CONTRERAS BASTIAS MAURICIO IGNACIO",25,20,5,3,28,5,3,20,5,3,0,0,0,0,0],["Cirugía Vascular Periférica","CIRUGIA VASCULAR","URDANETA GUZMAN VICTORIA CAROLINA",100,78,22,9,109,0,7,78,22,9,0,0,0,0,0],["Coloproctología (Cirugía Digestiva Baja)","CIRUGIA ADULTOS","CONTRERAS FLORES DAVID FLORES",14,5,9,0,14,0,11,5,9,0,0,0,0,0,0],["Coloproctología (Cirugía Digestiva Baja)","CIRUGIA ADULTOS","LLANOS YEVENES ROBERTO IGNACIO",53,16,37,3,56,0,46,16,37,3,0,0,0,0,0],["Coloproctología (Cirugía Digestiva Baja)","CIRUGIA ADULTOS","VEGA ZAMORANO RICARDO ANTONIO",29,12,17,3,32,4,44,12,17,3,0,0,0,0,0],["Coloproctología (Cirugía Digestiva Baja)","CIRUGIA ADULTOS","VESPA BARDIER MAURICIO EMILIO",13,4,9,0,13,1,10,4,9,0,0,0,0,0,0],["Dermatología","DERMATOLOGIA","PARRA CARES JULIO ALEJANDRO",24,15,9,3,27,2,0,15,9,3,0,0,0,0,0],["Dermatología","DERMATOLOGIA","VALENZUELA SALAMANCA NANCY PAT",42,11,31,4,46,0,0,11,31,4,0,0,0,0,0],["Dermatología","DERMATOLOGIA / ENFERMEDADES DE TRANSMISION SE","GUZMAN ROSSI AGUSTINA ELEONORA",120,69,51,14,134,15,0,39,51,14,30,0,0,0,0],["Dermatología","DERMATOLOGIA / ENFERMEDADES DE TRANSMISION SE","MUÑOZ CONCHA PATRICIA LORETO",66,20,46,9,75,6,0,20,46,9,0,0,0,0,0],["Diabetología","DIABETES MELLITUS INFANTL","MUÑOZ PEREZ TOMAS ANDRES",15,2,13,1,16,0,10,2,13,1,0,0,0,0,0],["Diabetología","DIABETES MELLITUS INFANTL","SANHUEZA FLORES CAMILA ANDREA",21,1,20,0,21,3,14,1,20,0,0,0,0,0,0],["Diabetología","DIABETES MELLITUS INFANTL","SCHNEIDER ULLOA PAULINA GRETE",40,5,35,5,45,9,19,2,32,5,3,3,0,0,0],["Diabetología","DIABETOLOGIA","HERNANDEZ ALVAREZ LORETO VALENTINA",51,24,27,7,58,8,34,24,27,7,0,0,0,0,0],["Diabetología","DIABETOLOGIA","MATAMALA RIQUELME PAMELA ALEJANDRA",57,12,45,4,61,3,9,9,43,4,3,2,0,0,0],["Diabetología","DIABETOLOGIA","PALAVECINO MORALES DANIELA PAOLA",102,69,33,5,107,4,34,21,33,5,48,0,0,0,0],["Diabetología","DIABETOLOGIA","ZAVALA ULLOA CLAUDIA MARCELA",73,21,52,7,80,3,61,21,52,7,0,0,0,0,0],["Endocrinología Adulto","ENDOCRINOLOGIA","ALMENAREZ GARCIA MIGUEL ANTONIO",96,33,63,7,103,14,57,33,63,7,0,0,0,0,0],["Endocrinología Adulto","ENDOCRINOLOGIA","IRRIBARRA VERA SANDRA IVONNE",117,22,95,7,124,3,58,10,73,7,12,22,0,0,0],["Endocrinología Adulto","ENDOCRINOLOGIA","PAREDES NAVA MARIANDREA",13,5,8,2,15,0,0,5,8,2,0,0,0,0,0],["Endocrinología Adulto","Endocrinología Adulto","PAULINA LOPEZ",17,7,10,0,17,0,0,0,0,0,0,0,7,10,0],["Endocrinología Pediátrica","ENDOCRINOLOGIA INFANTIL","MUÑOZ PEREZ TOMAS ANDRES",17,17,0,3,20,0,10,17,0,3,0,0,0,0,0],["Endocrinología Pediátrica","ENDOCRINOLOGIA INFANTIL","SANHUEZA FLORES CAMILA ANDREA",11,4,7,2,13,3,14,4,7,2,0,0,0,0,0],["Endocrinología Pediátrica","ENDOCRINOLOGIA INFANTIL","SCHNEIDER ULLOA PAULINA GRETE",73,28,45,7,80,9,19,28,45,7,0,0,0,0,0],["Enfermedad Respiratoria De Adulto (Broncopulmonar)","BRONCOPULMONAR ADU.","MARIN SEPULVEDA MAGDALENA DEL PILAR ELIANA",44,5,39,2,46,7,44,5,39,2,0,0,0,0,0],["Enfermedad Respiratoria De Adulto (Broncopulmonar)","BRONCOPULMONAR ADU.","PINOCHET FERNANDEZ VICTOR MANUEL",34,18,16,1,35,0,5,5,15,1,13,1,0,0,0],["Enfermedad Respiratoria De Adulto (Broncopulmonar)","BRONCOPULMONAR ADU.","ROZAS CONCHA FELIPE ALEJANDRO",97,48,49,2,99,16,22,36,49,2,12,0,0,0,0],["Enfermedad Respiratoria De Adulto (Broncopulmonar)","BRONCOPULMONAR ADU.","VEGA BENAVENTE CATALINA ANDREA",21,13,8,4,25,9,8,13,8,4,0,0,0,0,0],["Enfermedad Respiratoria Pediátrica (Broncopulmonar Infantil)","BRONCOPULMONAR INF.","ARIAS LUARTE FRANCISCA IGNACIA",16,14,2,9,25,0,5,14,2,9,0,0,0,0,0],["Enfermedad Respiratoria Pediátrica (Broncopulmonar Infantil)","BRONCOPULMONAR INF.","PARRA CARRASCO JUAN CARLOS",28,5,23,2,30,7,2,5,23,2,0,0,0,0,0],["Enfermedad Respiratoria Pediátrica (Broncopulmonar Infantil)","BRONCOPULMONAR INF.","ROA VELASCO RAMON DANIEL",13,9,4,9,22,6,6,9,4,9,0,0,0,0,0],["Gastroenterología Adulto","GASTROENTEROLOGIA AD.","ARTEAGA PUIG MATIAS ROBERTO",67,31,36,4,71,0,5,9,27,4,15,4,7,5,0],["Gastroenterología Adulto","GASTROENTEROLOGIA AD.","CARCAMO LOBOS MATIAS ERNESTO",26,26,0,6,32,5,0,26,0,6,0,0,0,0,0],["Gastroenterología Adulto","GASTROENTEROLOGIA AD.","FOX CUEVAS CLARA INES",63,38,25,4,67,8,40,38,25,4,0,0,0,0,0],["Gastroenterología Adulto","GASTROENTEROLOGIA AD.","FUENTES GONZALEZ ANA KARINA",51,51,0,2,53,10,51,51,0,2,0,0,0,0,0],["Gastroenterología Adulto","GASTROENTEROLOGIA AD.","KOELLER RIZZO CESAR IVAN",25,4,21,6,31,1,0,4,21,6,0,0,0,0,0],["Gastroenterología Adulto","GASTROENTEROLOGIA AD.","PAVES MORALES GUILLERMO",21,10,11,3,24,2,0,10,11,3,0,0,0,0,0],["Gastroenterología Adulto","GASTROENTEROLOGIA AD.","REYES MARTINEZ GASTON ROLANDO",211,117,94,27,238,28,74,117,94,27,0,0,0,0,0],["Gastroenterología Adulto","GASTROENTEROLOGIA AD.","SAAVEDRA VEDIA NELIDA LETICIA",10,10,0,0,10,1,19,10,0,0,0,0,0,0,0],["Gastroenterología Adulto","GASTROENTEROLOGIA AD.","SANTANA IBAÑEZ ROBERTO ESTEBAN",3,3,0,1,4,0,3,3,0,1,0,0,0,0,0],["Gastroenterología Adulto","GASTROENTEROLOGIA AD.","SERRANO DE ACERO ANA DELINA",7,7,0,0,7,0,7,7,0,0,0,0,0,0,0],["Gastroenterología Adulto","GASTROENTEROLOGIA AD.","TAPIA CORTES CLAUDIO ROBERTO",2,2,0,1,3,5,2,2,0,1,0,0,0,0,0],["Gastroenterología Pediátrica","GASTROENTEROLOGIA INF.","INFANTE MELGAREJO JUAN ROBERTO",79,29,50,20,99,5,0,29,50,20,0,0,0,0,0],["Gastroenterología Pediátrica","GASTROENTEROLOGIA INF.","ROA VELASCO RAMON DANIEL",7,2,5,4,11,6,6,2,5,4,0,0,0,0,0],["Gastroenterología Pediátrica","GASTROENTEROLOGIA INF.","VELASQUEZ MENDOZA RITHA NATHALY",19,5,14,4,23,2,0,5,14,4,0,0,0,0,0],["Geriatría","GERIATRIA","BERNAL GARCIA JOHN ALEJANDRO",23,18,5,1,24,11,0,18,5,1,0,0,0,0,0],["Geriatría","GERIATRIA","CIFUENTES MARDONES GONZALO ALEJANDRO",6,2,4,1,7,1,0,1,4,1,1,0,0,0,0],["Geriatría","GERIATRIA","NARVAEZ SALDIAS JENNY ANDREA",9,3,6,4,13,4,0,1,4,4,2,2,0,0,0],["Hematología","HEMATOLOGIA ADULTOS","CHAVIANO DE LEON MARILYN",78,10,68,5,83,2,0,10,68,5,0,0,0,0,0],["Hematología","HEMATOLOGIA ADULTOS","MELLADO VILLA SANDRA IVETTE",225,103,122,14,239,1,92,75,122,14,28,0,0,0,0],["Hematología","HEMATOLOGIA ADULTOS","RODRIGUEZ VITON YAIMA",18,4,14,2,20,1,13,2,13,2,2,1,0,0,0],["Hematología","HEMATOLOGIA ADULTOS","SCHULZ CACERES EILEEN PAOLA",31,6,25,6,37,7,0,6,25,6,0,0,0,0,0],["Hematología","HEMATOLOGIA ADULTOS","SISO GARCIA JENNY CANEXA",12,4,8,0,12,0,0,4,8,0,0,0,0,0,0],["Hematología","HEMATOLOGIA INFANTIL","AEDO MENA MONICA ALICIA",79,23,56,12,91,13,0,23,46,12,0,0,0,10,0],["Infectología","INFECTOLOGIA","CARMONA CONCHA CRISTIAN ALONSO",6,3,3,0,6,3,0,3,3,0,0,0,0,0,0],["Infectología","INFECTOLOGIA","PACHECO MEDEL MERY ANNE",8,8,0,0,8,0,0,8,0,0,0,0,0,0,0],["Infectología","INFECTOLOGIA INFANTIL","FERNANDEZ MUÑOZ GERARDO HERNAN",29,7,22,3,32,0,0,7,22,3,0,0,0,0,0],["Inmunología","ENFERMEDADES DE TRANSMISION SE / INMUNOLOGIA ADULTO / INMUNOLOGIA INFANTIL","PUENTE LIZANA MARIA IGNACIA",109,19,90,10,119,2,7,17,89,10,2,1,0,0,0],["Inmunología","INMUNOLOGIA ADULTO","VASQUEZ SANDOVAL RICARDO NOLASCO",60,43,17,13,73,4,0,43,17,13,0,0,0,0,0],["Inmunología","INMUNOLOGIA ADULTO / INMUNOLOGIA INFANTIL","FERNANDEZ QUEZADA FABIOLA DEL PILAR",92,14,78,9,101,3,5,14,78,9,0,0,0,0,0],["MEDICINA FAMILIAR","MEDICINA FAMILIAR","JUAN FRANCISCO OPAZO",2,0,2,0,2,0,0,0,0,0,0,0,0,2,0],["Mastología","PAT.MAMARIA","BARCOJ BRAVO ALEXIS MARIANO",190,44,146,3,193,21,74,44,146,3,0,0,0,0,0],["Mastología","PAT.MAMARIA","LASTRA RIVERO JESUS ALEJANDRO",71,23,48,1,72,2,12,23,48,1,0,0,0,0,0],["Mastología","PAT.MAMARIA","UBILLA SAEZ FELIPE EDUARDO",115,14,101,4,119,6,17,14,76,4,0,0,0,25,0],["Medicina Familiar","MEDICINA FAMILIAR","ARAVIDIS MILONAS STAVRO",288,288,0,0,288,0,0,288,0,0,0,0,0,0,0],["Medicina Familiar","MEDICINA FAMILIAR","ARIAS BENI MILTON FERNANDO",15,15,0,3,18,0,0,15,0,3,0,0,0,0,0],["Medicina Familiar","MEDICINA FAMILIAR","CHACON CARRERO LISBET TERESA",146,146,0,2,148,0,0,146,0,2,0,0,0,0,0],["Medicina Familiar","MEDICINA FAMILIAR","RINCON VILLALOBOS FELIX EDUARDO",213,213,0,0,213,0,0,213,0,0,0,0,0,0,0],["Medicina Física Y Rehabilitación","FISIATRIA","MUÑOZ SILVA EVELYN IVONNE",33,5,28,1,34,2,0,5,28,1,0,0,0,0,0],["Medicina Física Y Rehabilitación","FISIATRIA / FISIATRIA INFANTIL","FLORES SANCHEZ ELIZABETH CAROLAYN",33,10,23,8,41,2,0,10,23,8,0,0,0,0,0],["Medicina Física Y Rehabilitación","FISIATRIA / FISIATRIA INFANTIL","PEREZ GAETE MARCELO RODRIGO",19,12,7,2,21,3,0,12,7,2,0,0,0,0,0],["Medicina Física Y Rehabilitación","FISIATRIA / FISIATRIA INFANTIL","SANDOVAL NAVARRETE DANIELA ANDREA",78,18,60,11,89,14,1,18,60,11,0,0,0,0,0],["Medicina Interna","ENFERMEDADES DE TRANSMISION SE","PACHECO MEDEL MERY ANNE",13,0,13,0,13,0,0,0,13,0,0,0,0,0,0],["Medicina Interna","MEDICINA INTERNA","ALARCON DIAZ ROCIO CONSTANZA",18,10,8,2,20,9,0,10,8,2,0,0,0,0,0],["Medicina Interna","MEDICINA INTERNA","ANDREU CUELLO JUAN PEDRO",60,21,39,10,70,12,60,21,39,10,0,0,0,0,0],["Medicina Interna","MEDICINA INTERNA","CARMONA CONCHA CRISTIAN ALONSO",6,6,0,0,6,3,0,6,0,0,0,0,0,0,0],["Medicina Interna","MEDICINA INTERNA","RAMIREZ MURILLO MERCY JUANITA",54,11,43,9,63,3,54,11,43,9,0,0,0,0,0],["Medicina Interna","MEDICINA INTERNA","REYES MARTINEZ GASTON ROLANDO",4,2,2,0,4,28,74,2,2,0,0,0,0,0,0],["Medicina Interna","TRATAMIENTO ANTICOAGULANT","ZAVALA ULLOA CLAUDIA MARCELA",4,0,4,0,4,3,61,0,4,0,0,0,0,0,0],["Medicina Paliativa Y De Manejo Del Dolor","ALIVIO DEL DOLOR","CARRASCO DEL MAURO ALFONSINA PAZ",155,22,133,14,169,0,0,22,133,14,0,0,0,0,0],["Medicina Paliativa Y De Manejo Del Dolor","ALIVIO DEL DOLOR","GUTIERREZ MORONTA ARIANNY NAYARY",188,54,134,17,205,0,10,53,133,17,1,1,0,0,0],["Medicina Paliativa Y De Manejo Del Dolor","ALIVIO DEL DOLOR","PUCHEU MORIS XIMENA PILAR",46,15,31,4,50,0,13,15,31,4,0,0,0,0,0],["Medicina Paliativa Y De Manejo Del Dolor","ALIVIO DEL DOLOR","VASQUEZ FONSECA KATERYN DAYANA",175,67,108,16,191,2,38,67,108,16,0,0,0,0,0],["Nefrología Adulto","NEFROLOGIA ADULTOS","PRADENAS ESPINAZA MARIA JOSE",42,21,21,1,43,1,12,21,0,1,0,0,0,21,0],["Nefrología Adulto","NEFROLOGIA ADULTOS","SALGADO LOPEZ JENNIE",46,9,37,3,49,1,9,9,37,3,0,0,0,0,0],["Nefrología Adulto","NEFROLOGIA ADULTOS / UNIDAD DE DIALISIS","LEMA MELENA MARCO JHOVANNY",163,29,134,7,170,0,18,28,84,7,0,0,1,50,0],["Nefrología Adulto","NEFROLOGIA ADULTOS / UNIDAD DE DIALISIS","PADRINO SABINO MARIA FERNANDA",112,18,94,11,123,0,26,18,94,11,0,0,0,0,0],["Nefrología Adulto","UNIDAD DE DIALISIS","GARCIA RODRIGUEZ BORIS LUIS",42,0,42,9,51,0,0,0,42,9,0,0,0,0,0],["Nefrología Adulto","UNIDAD DE DIALISIS","PAREDES ORDOÑEZ FRANCO LEONARDO",43,0,43,0,43,0,0,0,43,0,0,0,0,0,0],["Nefrología Pediátrica","NEFROLOGIA INFANTIL","RIVAS VETHENCOURT MARIA ALEJANDRA",56,13,43,14,70,42,0,13,43,14,0,0,0,0,0],["Nefrología Pediátrica","NEFROLOGIA INFANTIL","VILLAGRA CUEVAS JORGE VICTOR",54,19,35,5,59,29,0,19,35,5,0,0,0,0,0],["Neonatología","NEONATOLOGIA","ARN",0,0,0,1,1,0,0,0,0,1,0,0,0,0,0],["Neonatología","NEONATOLOGIA","ARPON GARRIDO FRANCISCA JAVIERA",16,7,9,3,19,9,0,7,9,3,0,0,0,0,0],["Neonatología","NEONATOLOGIA","GAJARDO CASTRO MONICA VIVIAN",3,1,2,0,3,0,0,1,2,0,0,0,0,0,0],["Neonatología","NEONATOLOGIA","OJEDA DIAZ ORLANDO",16,8,8,3,19,8,0,8,8,3,0,0,0,0,0],["Neonatología","NEONATOLOGIA","PALACIOS SAAVEDRA LORNA ANDREA",18,6,12,1,19,7,0,6,12,1,0,0,0,0,0],["Neonatología","NEONATOLOGIA","VIVAS ESCALONA AYSBEL CAROLINA",16,5,11,2,18,8,0,5,11,2,0,0,0,0,0],["Neurocirugía","NEUROCIRUGIA","AGUILERA RODRIGUEZ SERGIO DAVID",37,33,4,2,39,4,0,33,4,2,0,0,0,0,0],["Neurocirugía","NEUROCIRUGIA","CORREA PEÑA JOAQUIN ALFONSO",54,21,33,5,59,16,5,21,33,5,0,0,0,0,0],["Neurocirugía","NEUROCIRUGIA","FORTUÑO MUÑOZ LUIS GONZALO",25,11,14,1,26,6,0,11,14,1,0,0,0,0,0],["Neurocirugía","NEUROCIRUGIA","IGLESIAS VARGAS CLAUDIO SEBASTIAN",49,30,19,9,58,15,9,30,19,9,0,0,0,0,0],["Neurocirugía","NEUROCIRUGIA","LARA PULGAR PABLO ALEJANDRO",68,36,32,18,86,38,0,36,32,18,0,0,0,0,0],["Neurocirugía","NEUROCIRUGIA","PALMA MURILLO MARIA CRISTINA",56,43,13,11,67,16,0,43,13,11,0,0,0,0,0],["Neurología Adulto","NEUROLOGIA AD.","BRAVO ZUÑIGA FERNANDO ANDRES",53,36,17,2,55,12,27,32,12,2,4,5,0,0,0],["Neurología Adulto","NEUROLOGIA AD.","CARRASCO TAPIA MARCELA ANDREA",37,21,16,4,41,7,7,11,12,4,6,0,4,4,0],["Neurología Adulto","NEUROLOGIA AD.","CONTRERAS JEREZ CARMEN ALEJANDRA",10,8,2,2,12,1,2,8,2,2,0,0,0,0,0],["Neurología Adulto","NEUROLOGIA AD.","DELLAROSSA CIFUENTES DANIELLA PATRICIA",46,15,31,9,55,4,10,15,31,9,0,0,0,0,0],["Neurología Adulto","NEUROLOGIA AD.","LOPEZ ARCOS EDUARDO ROBERTO",59,35,24,7,66,26,12,31,16,7,4,8,0,0,0],["Neurología Adulto","NEUROLOGIA AD.","MATAMALA SAAVEDRA JORGE ESTEBAN",51,28,23,9,60,3,16,19,8,8,7,13,2,2,1],["Neurología Adulto","NEUROLOGIA AD.","PARRAGUEZ CORNEJO JOSE LUIS",46,28,18,12,58,18,0,25,18,12,3,0,0,0,0],["Neurología Adulto","NEUROLOGIA AD.","RIVERA MATUS DE LA PARRA MIGUEL ALONSO",17,3,14,3,20,5,3,3,9,3,0,5,0,0,0],["Neurología Adulto","NEUROLOGIA AD.","RUF FRANCO MARTA EDITH",41,17,24,8,49,1,0,13,19,8,0,0,4,5,0],["Neurología Adulto","NEUROLOGIA AD.","SUAZO FERRADA ALLAN MARTIN",41,10,31,4,45,13,13,10,31,4,0,0,0,0,0],["Neurología Adulto","NEUROLOGIA AD.","USLAR NAWRATH WILHELM FRIEDRICH",59,34,25,9,68,9,24,33,25,9,1,0,0,0,0],["Neurología Pediátrica","NEUROLOGIA INF.","CORIA DE LA HOZ CAROLINA EUGENIA",37,13,24,7,44,18,5,13,24,7,0,0,0,0,0],["Neurología Pediátrica","NEUROLOGIA INF.","FIGUEROA ABARCA RENNY DANIELA",24,24,0,9,33,3,0,24,0,9,0,0,0,0,0],["Neurología Pediátrica","NEUROLOGIA INF.","JAQUE ALMENDRAS CARLOS ALBERTO",41,14,27,4,45,15,0,14,27,4,0,0,0,0,0],["Neurología Pediátrica","NEUROLOGIA INF.","MUÑOZ SOLIS PATRICIO WASHINGTON",297,282,15,10,307,12,14,39,15,10,243,0,0,0,0],["Neurología Pediátrica","NEUROLOGIA INF.","SCHMIDT CRUZ MARIA IGNACIA LUISA",58,33,25,9,67,13,21,33,25,9,0,0,0,0,0],["Neurología Pediátrica","NEUROLOGIA INF.","VASQUEZ HERNANDEZ CARLA ESTEFANIA",55,21,34,9,64,11,0,19,34,9,2,0,0,0,0],["Nutrición clínica","NUTRIOLOGA ADULTO","HERNANDEZ ALVAREZ LORETO VALENTINA",16,10,6,8,24,8,34,10,6,8,0,0,0,0,0],["Nutrición clínica","NUTRIOLOGA ADULTO","MARTINEZ VALLEJO SANDRA MILENA",18,5,13,0,18,0,0,5,13,0,0,0,0,0,0],["Nutrición clínica","NUTRIOLOGA ADULTO","QUIJADA DE PRADO NEIDY OSMARY",14,4,10,0,14,0,0,4,10,0,0,0,0,0,0],["Nutrición clínica","NUTRIOLOGIA INFANTIL","RIVAS ALLENDE LORETO CLAUDIA",42,10,32,7,49,6,0,10,32,7,0,0,0,0,0],["Nutrición clínica","NUTRIOLOGIA INFANTIL","VELASQUEZ MENDOZA RITHA NATHALY",40,23,17,11,51,2,0,23,17,11,0,0,0,0,0],["Obstetricia Y Ginecología","A.R.O.","ABAD ESTEFO JOSEMARIA",71,13,58,0,71,18,0,13,57,0,0,0,0,1,0],["Obstetricia Y Ginecología","A.R.O.","ALARCON POZO DANIELA ALEJANDRA",25,16,9,5,30,1,0,3,9,5,12,0,1,0,0],["Obstetricia Y Ginecología","A.R.O.","BREUKER MATA ISABEL CRISTINA",101,37,64,4,105,14,0,37,64,4,0,0,0,0,0],["Obstetricia Y Ginecología","A.R.O.","CACERES CHAMIZO XIMENA IVONNE",58,22,36,0,58,11,0,22,36,0,0,0,0,0,0],["Obstetricia Y Ginecología","A.R.O.","COX URETA MATIAS JESUS",6,4,2,1,7,1,0,1,2,1,3,0,0,0,0],["Obstetricia Y Ginecología","A.R.O.","GONZALEZ GONZALEZ RILKE RENE",106,39,67,3,109,9,0,39,65,3,0,0,0,2,0],["Obstetricia Y Ginecología","A.R.O.","LEON PIRELA LORENA LISETTE",143,34,109,3,146,31,0,34,109,3,0,0,0,0,0],["Obstetricia Y Ginecología","A.R.O.","LEPEZ GARCIA JOSE ALFONSO",6,0,6,0,6,1,0,0,6,0,0,0,0,0,0],["Obstetricia Y Ginecología","A.R.O.","MARTINEZ RIVAS ROSMARA ANDREINA",97,25,72,1,98,10,0,25,60,1,0,0,0,12,0],["Obstetricia Y Ginecología","A.R.O.","PROFESIONAL ARO",0,0,0,11,11,164,0,0,0,11,0,0,0,0,0],["Obstetricia Y Ginecología","A.R.O.","ROMERO VILLAGRA ANA KARINA",54,13,41,0,54,9,0,13,41,0,0,0,0,0,0],["Obstetricia Y Ginecología","A.R.O.","VIÑUELA POIRIER JIMENA",7,0,7,7,14,6,0,0,7,7,0,0,0,0,0],["Obstetricia Y Ginecología","CLIMATERIO / GINECOLOGIA","FERNANDEZ GOÑI ARIEL ALEJANDRO",102,43,59,11,113,43,0,43,59,11,0,0,0,0,0],["Obstetricia Y Ginecología","ENFERMEDADES DE TRANSMISION SE / GINECOLOGIA","ARIZA SANCHEZ ALVAROSA ALTAGRACIA",268,118,150,57,325,33,6,118,150,57,0,0,0,0,0],["Obstetricia Y Ginecología","FERTILIDAD","MUÑOZ MUÑOZ JORGE FELIPE",72,35,37,5,77,0,0,35,37,5,0,0,0,0,0],["Obstetricia Y Ginecología","FERTILIDAD / GINECOLOGIA","MONSALVE GONZALEZ LORENA DEL PILAR",24,1,23,4,28,4,0,1,23,4,0,0,0,0,0],["Obstetricia Y Ginecología","GINECOLOGIA","LEIVA AEDO PAZ VERONICA",148,0,148,22,170,48,0,0,148,22,0,0,0,0,0],["Obstetricia Y Ginecología","GINECOLOGIA","MACCHIAVELLO RAU JORGE ANDRES",22,22,0,2,24,6,0,22,0,2,0,0,0,0,0],["Obstetricia Y Ginecología","GINECOLOGIA","RIBBECK VEJAR GUILLERMO ADOLFO",26,6,20,2,28,6,2,6,20,2,0,0,0,0,0],["Obstetricia Y Ginecología","GINECOLOGIA","SEGUIC FERRE JOSE TOMAS",94,42,52,22,116,0,0,42,52,22,0,0,0,0,0],["Obstetricia Y Ginecología","GINECOLOGIA / GINECOLOGIA INFANTIL","RETTIG DIAZ JAVIERA IGNACIA",67,4,63,10,77,0,0,4,63,10,0,0,0,0,0],["Obstetricia Y Ginecología","GINECOLOGIA / PISO PELVICO","BURGOS CHILAN ARMANDO MISAEL",47,19,28,6,53,4,0,19,28,6,0,0,0,0,0],["Obstetricia Y Ginecología","GINECOLOGIA / PISO PELVICO","FABBRI AGUILERA RENE ALCIDES",55,39,16,1,56,9,0,39,16,1,0,0,0,0,0],["Obstetricia Y Ginecología","GINECOLOGIA / PISO PELVICO","MENDOZA MONTALVAN EDDYE ANTONIO",85,58,27,2,87,11,0,58,27,2,0,0,0,0,0],["Obstetricia Y Ginecología","GINECOLOGIA INFANTIL","ARAVENA ARROYO MARCELA ALEJANDRA",21,8,13,4,25,4,0,8,13,4,0,0,0,0,0],["Obstetricia Y Ginecología","ONCO-GINECOLOGIA","PERUGGI GONZALEZ FERNANDO BLAS",45,22,23,6,51,2,17,22,23,6,0,0,0,0,0],["Obstetricia Y Ginecología","ONCO-GINECOLOGIA / PAT. CERVICAL","OSSES STUMPFOLL VALENTINA NATALIA",102,8,94,6,108,10,27,8,94,6,0,0,0,0,0],["Obstetricia Y Ginecología","PAT. CERVICAL","BALDECCHI QUEZADA FRANCISCO ANIBAL",342,86,256,28,370,48,85,86,256,28,0,0,0,0,0],["Obstetricia Y Ginecología","PAT. CERVICAL","CAMPOSANO LUZZI FELIPE IGNACIO",103,37,66,6,109,24,12,37,66,6,0,0,0,0,0],["Obstetricia Y Ginecología","PISO PELVICO","VEGA MUÑOZ RAUL EDUARDO",36,21,15,2,38,0,0,21,15,2,0,0,0,0,0],["Oftalmología","OFTALMOLOGIA","CARTES PINTO CARLOS MANUEL",152,47,105,10,162,9,0,47,105,10,0,0,0,0,0],["Oftalmología","OFTALMOLOGIA","FLORES DURAN IGNACIO ANDRES",126,73,53,5,131,0,0,73,53,5,0,0,0,0,0],["Oftalmología","OFTALMOLOGIA","FRANCO ESCOBAR FRANCISCO JAVIER",23,0,23,3,26,4,0,0,23,3,0,0,0,0,0],["Oftalmología","OFTALMOLOGIA","JIMENEZ CID MARCELO LUIS MIGUEL",176,97,79,13,189,49,0,97,79,13,0,0,0,0,0],["Oftalmología","OFTALMOLOGIA","MUÑOZ MENESES MARCELO IVAN",21,21,0,1,22,3,8,21,0,1,0,0,0,0,0],["Oftalmología","OFTALMOLOGIA","PEREZ GARCIA ELIECER",94,35,59,7,101,17,6,35,59,7,0,0,0,0,0],["Oftalmología","OFTALMOLOGIA","ROJAS GUTIERREZ TAMARA ISABEL",136,68,68,4,140,23,0,68,68,4,0,0,0,0,0],["Oftalmología","OFTALMOLOGIA","SAN MARTIN GEISSE RAUL ANDRES",55,2,53,2,57,9,0,2,53,2,0,0,0,0,0],["Oftalmología","OFTALMOLOGIA","TOLEDO ALCAINO NICOLAS IGNACIO",186,98,88,13,199,0,0,98,88,13,0,0,0,0,0],["Oftalmología","OFTALMOLOGIA","TORRES QUIROZ GLORIA ANDREA",27,2,25,1,28,4,0,2,25,1,0,0,0,0,0],["Oncología Médica","ONCOLOGIA","CHAVIANO DE LEON MARILYN",49,1,48,0,49,2,0,1,48,0,0,0,0,0,0],["Oncología Médica","ONCOLOGIA","GUTIERREZ MARTINEZ JOSE ANDRES",58,0,58,8,66,0,0,0,58,8,0,0,0,0,0],["Oncología Médica","ONCOLOGIA","RODRIGUEZ VITON YAIMA",59,5,54,4,63,1,13,5,54,4,0,0,0,0,0],["Oncología Médica","ONCOLOGIA","SAURE SARRIA VICTOR MANUEL",162,45,117,18,180,10,0,45,108,9,0,0,0,9,9],["Oncología Médica","ONCOLOGIA","SERRANO DIAZ JOSE ANTONIO",207,40,167,18,225,9,0,40,160,12,0,0,0,7,6],["Oncología Médica","ONCOLOGIA","SISO GARCIA JENNY CANEXA",1,0,1,0,1,0,0,0,1,0,0,0,0,0,0],["Otorrinolaringología","OTORRINO","ASTUDILLO ORTEGA DAVID MAURICIO",37,17,20,9,46,2,16,17,20,9,0,0,0,0,0],["Otorrinolaringología","OTORRINO","CHAVEZ VIVEROS RICHARD ALEJANDRO",72,45,27,9,81,18,0,45,27,9,0,0,0,0,0],["Otorrinolaringología","OTORRINO","FIGUEROA MORAGA RONY ALEXIS",84,67,17,5,89,34,0,67,17,5,0,0,0,0,0],["Otorrinolaringología","OTORRINO","FISURADOS EQUIPO FISURADO",26,2,24,0,26,0,0,2,24,0,0,0,0,0,0],["Otorrinolaringología","OTORRINO","GARCIA MANRIQUEZ ALONSO RENE",92,58,34,6,98,36,16,58,34,6,0,0,0,0,0],["Otorrinolaringología","OTORRINO","LEIVA SALAZAR RODRIGO IGNACIO",90,39,51,10,100,20,0,39,51,10,0,0,0,0,0],["Otorrinolaringología","OTORRINO","MISSENE ORELLANA BERTA JOSEFA",82,47,35,9,91,33,23,47,35,9,0,0,0,0,0],["Otorrinolaringología","OTORRINO","OTORRINO PROFESIONAL",1,1,0,0,1,0,0,1,0,0,0,0,0,0,0],["Otorrinolaringología","OTORRINO","REBOLLEDO FUENTES VICTOR DANIEL",100,61,39,12,112,45,28,61,39,12,0,0,0,0,0],["Otorrinolaringología","OTORRINO","VALDES SEPULVEDA RICARDO ANTONIO",68,47,21,6,74,32,23,47,21,6,0,0,0,0,0],["Pediatría","PEDIATRIA","ARIAS LUARTE FRANCISCA IGNACIA",15,5,10,10,25,0,5,5,10,10,0,0,0,0,0],["Pediatría","PEDIATRIA","ARRIAGADA ARAVENA KARINA DEL CARMEN",22,11,11,5,27,2,0,11,11,5,0,0,0,0,0],["Pediatría","PEDIATRIA","GARCIA PANECA KATIA DE LA CARIDAD",82,23,59,7,89,32,0,23,59,7,0,0,0,0,0],["Pediatría","PEDIATRIA","RIVAS VETHENCOURT MARIA ALEJANDRA",65,5,60,21,86,42,0,5,60,21,0,0,0,0,0],["Pediatría","PEDIATRIA","VARGAS LUBBERT RICARDO ARTURO",33,33,0,16,49,2,0,33,0,16,0,0,0,0,0],["Psiquiatría Adulto","PSIQUIATRIA","ARRAU GAMONAL RODRIGO ANTONIO",48,2,46,3,51,0,0,0,46,3,2,0,0,0,0],["Psiquiatría Adulto","PSIQUIATRIA","BARBERIS NAVARRETE ESTEFANIA ALEJANDRA",61,17,44,10,71,6,0,17,44,10,0,0,0,0,0],["Psiquiatría Adulto","PSIQUIATRIA","BUSTAMANTE BASSO JOSE LUIS",17,0,17,6,23,0,0,0,17,6,0,0,0,0,0],["Psiquiatría Adulto","PSIQUIATRIA","CAAMAÑO CAAMAÑO PABLO RODRIGO",88,27,61,15,103,13,8,27,61,15,0,0,0,0,0],["Psiquiatría Adulto","PSIQUIATRIA","CARRASCO JARDUA ROLANDO IGNACIO",32,2,30,2,34,1,0,2,30,2,0,0,0,0,0],["Psiquiatría Adulto","PSIQUIATRIA","FIGUEROA SARAVIA CRISTIAN ALESSANDRO",13,1,12,2,15,0,0,1,12,2,0,0,0,0,0],["Psiquiatría Adulto","PSIQUIATRIA","GARRIDO LAGOS PILAR ANDREA",93,29,64,17,110,4,10,29,64,17,0,0,0,0,0],["Psiquiatría Adulto","PSIQUIATRIA","GONZALEZ ROJAS DIEGO MANUEL",42,15,27,7,49,8,7,15,27,7,0,0,0,0,0],["Psiquiatría Adulto","PSIQUIATRIA","HORMAZABAL PARADA NAIN ALEJANDRO",99,10,89,16,115,1,0,3,89,16,7,0,0,0,0],["Psiquiatría Adulto","PSIQUIATRIA","MARTEL ESPINOZA KATHERYN MARGARITA",1,1,0,0,1,0,0,1,0,0,0,0,0,0,0],["Psiquiatría Adulto","PSIQUIATRIA","MORALES LLOPIS RICARDO IGNACIO",9,9,0,0,9,9,0,9,0,0,0,0,0,0,0],["Psiquiatría Adulto","PSIQUIATRIA","NAVARRETE BUSTAMANTE DANIEL HUMBERTO",54,2,52,3,57,0,0,0,52,3,2,0,0,0,0],["Psiquiatría Adulto","PSIQUIATRIA","OLIVA FUENTEALBA DENISSE ANGELICA",47,5,42,3,50,4,0,5,42,3,0,0,0,0,0],["Psiquiatría Adulto","PSIQUIATRIA","SALVO GARRIDO LILIAN OLIVIA",34,0,34,1,35,0,0,0,34,1,0,0,0,0,0],["Psiquiatría Adulto","PSIQUIATRIA","TRONCOSO RUIZ CLAUDIO ALBERTO",66,23,43,4,70,6,4,23,43,4,0,0,0,0,0],["Psiquiatría Adulto","PSIQUIATRIA","VERA TOLOZA MANUEL ALEJANDRO",57,12,45,14,71,9,3,12,45,14,0,0,0,0,0],["Psiquiatría Adulto","PSIQUIATRIA","VILLEGAS SANCHEZ KATHERINE JASMINE",26,5,21,3,29,0,0,5,21,3,0,0,0,0,0],["Psiquiatría Pediátrica Y De La Adolescencia","PSIQUIATRIA INFANTIL","ARRIAGADA RODRIGUEZ ANDREA LORENA",41,12,29,1,42,6,2,12,29,1,0,0,0,0,0],["Psiquiatría Pediátrica Y De La Adolescencia","PSIQUIATRIA INFANTIL","FIERRO TORNQUIST JORGE EMMANUEL",2,0,2,0,2,0,0,0,2,0,0,0,0,0,0],["Psiquiatría Pediátrica Y De La Adolescencia","PSIQUIATRIA INFANTIL","REYES RIVAS CAMILA ANDREA",26,10,16,5,31,0,0,3,15,5,7,1,0,0,0],["Reumatología","REUMATOLOGIA","BADILLA PIÑEIRO MARIA NATALIA",106,36,70,4,110,11,20,36,70,4,0,0,0,0,0],["Reumatología","REUMATOLOGIA","PAVEZ CUADRA JOCELYN PAMELA",59,59,0,8,67,15,0,59,0,8,0,0,0,0,0],["Reumatología","REUMATOLOGIA","POZO LAGOS PAULA ISABEL",39,10,29,1,40,2,6,10,27,1,0,2,0,0,0],["Reumatología","REUMATOLOGIA","RIVERA JAVET AUGUSTO GOETHE",30,30,0,2,32,7,0,30,0,2,0,0,0,0,0],["Reumatología","REUMATOLOGIA","SALCEDO BENITEZ JOSE MANUEL",135,33,102,6,141,5,35,33,102,6,0,0,0,0,0],["Traumatología Y Ortopedia","ORTOPEDIA INFANTIL","EQUIPO PIE B",1,0,1,0,1,0,0,0,1,0,0,0,0,0,0],["Traumatología Y Ortopedia","ORTOPEDIA INFANTIL","ESPINOZA SARDINHA JOSEPH ENMANUEL",181,70,111,25,206,55,24,70,111,25,0,0,0,0,0],["Traumatología Y Ortopedia","ORTOPEDIA INFANTIL","JIMENEZ FIERRO SEBASTIAN ANDRES",71,16,55,4,75,26,19,15,55,4,1,0,0,0,0],["Traumatología Y Ortopedia","ORTOPEDIA INFANTIL","SILVA PAREDES LORETO ALEJANDRA",59,21,38,7,66,0,8,21,38,7,0,0,0,0,0],["Traumatología Y Ortopedia","ORTOPEDIA INFANTIL","VASQUEZ CONTRERAS EVELYN ODETTE",124,36,88,9,133,40,29,36,88,9,0,0,0,0,0],["Traumatología Y Ortopedia","TMT CADERA Y PELVIS / TRAUMATOLOGIA","GUTIERREZ MELO ALICIA ANDREA",32,22,10,5,37,0,16,22,10,5,0,0,0,0,0],["Traumatología Y Ortopedia","TMT CADERA Y PELVIS / TRAUMATOLOGIA","ORTIZ BRAVO DANIEL ANTONIO",78,38,40,6,84,9,41,38,40,6,0,0,0,0,0],["Traumatología Y Ortopedia","TMT CADERA Y PELVIS / TRAUMATOLOGIA","PAVEZ LEIVA PEDRO LUIS",12,1,11,1,13,0,0,1,11,1,0,0,0,0,0],["Traumatología Y Ortopedia","TMT RODILLA / TRAUMATOLOGIA","MENESES HERRERA CAROLINA VALERIA",126,80,46,19,145,27,35,80,46,19,0,0,0,0,0],["Traumatología Y Ortopedia","TMT TOBILLO Y PIE","OTERO VENEGAS EDUARDO ANDRES",27,16,11,0,27,0,0,0,11,0,16,0,0,0,0],["Traumatología Y Ortopedia","TMT TOBILLO Y PIE","REBOLLEDO REBOLLEDO RICARDO ANDRES",68,13,55,4,72,10,0,13,55,4,0,0,0,0,0],["Traumatología Y Ortopedia","TMT TOBILLO Y PIE / TRAUMATOLOGIA","CONEJEROS CABRERA CRISTIAN ALFONSO",43,16,27,4,47,7,0,16,27,4,0,0,0,0,0],["Traumatología Y Ortopedia","TMT TOBILLO Y PIE / TRAUMATOLOGIA","GUERRERO ACUÑA SERGIO ALEJANDRO",48,29,19,14,62,24,0,29,19,14,0,0,0,0,0],["Traumatología Y Ortopedia","TRAUMATOLOGIA","BORZONE VALDEBENITO LORENZO RAFAEL",55,16,39,0,55,2,0,16,39,0,0,0,0,0,0],["Traumatología Y Ortopedia","TRAUMATOLOGIA","CIFUENTES AEDO HECTOR NICOLAS",64,31,33,21,85,14,0,31,33,21,0,0,0,0,0],["Traumatología Y Ortopedia","TRAUMATOLOGIA","FIGUEROA HERRERO MACARENA DEL PILAR",70,49,21,12,82,12,0,15,21,12,34,0,0,0,0],["Traumatología Y Ortopedia","TRAUMATOLOGIA","FUENTES MORALES LUIS JOSE",37,30,7,15,52,18,0,30,7,15,0,0,0,0,0],["Traumatología Y Ortopedia","TRAUMATOLOGIA","IRRIBARREN GOMEZ ROBERTO MARCELO",13,8,5,2,15,3,0,8,5,2,0,0,0,0,0],["Traumatología Y Ortopedia","TRAUMATOLOGIA","OJEDA CARRASCO JOSE LUIS",40,26,14,6,46,8,0,26,14,6,0,0,0,0,0],["Traumatología Y Ortopedia","TRAUMATOLOGIA","OJEDA INZUNZA ANDRES EDUARDO",56,19,37,13,69,14,0,19,37,13,0,0,0,0,0],["Traumatología Y Ortopedia","TRAUMATOLOGIA / TRAUMATOLOGIA MUÑECA MANO","ALVIAL SAN MARTIN ANDRES ESTEBAN",106,8,98,11,117,24,0,8,98,11,0,0,0,0,0],["Traumatología Y Ortopedia","TRAUMATOLOGIA HOMBRO","AGUIRRE DEVOTO JOSE PABLO",32,9,23,8,40,2,0,9,23,8,0,0,0,0,0],["Traumatología Y Ortopedia","TRAUMATOLOGIA HOMBRO","DIAZ APABLAZA EDUARDO ALEJANDRO",108,45,63,20,128,17,0,45,63,20,0,0,0,0,0],["Traumatología Y Ortopedia","TRAUMATOLOGIA MUÑECA MANO","CIFUENTES ARRIAGADA NATALIA PRISCILA",65,24,41,10,75,4,0,24,41,10,0,0,0,0,0],["Traumatología Y Ortopedia","TRAUMATOLOGIA MUÑECA MANO","FUENTES CERDA CESAR ROLANDO",65,13,52,4,69,7,0,13,52,4,0,0,0,0,0],["Traumatología Y Ortopedia","TRAUMATOLOGIA MUÑECA MANO","URDANETA GALLANTI DANIEL SIMON",147,54,93,21,168,32,0,54,93,21,0,0,0,0,0],["Urología","UROLOGIA","ARIAS PEÑA ALEXIS GABRIEL",22,5,17,0,22,0,14,5,17,0,0,0,0,0,0],["Urología","UROLOGIA","CARVAJAL SORIA DAVID ARTURO",75,22,53,4,79,3,41,22,53,4,0,0,0,0,0],["Urología","UROLOGIA","GEBAUER PEÑA SERGIO IGOR",297,266,31,0,297,27,0,2,31,0,264,0,0,0,0],["Urología","UROLOGIA","HERNANDEZ PIÑEDA SEBASTIAN ALEJANDRO",124,60,64,6,130,21,36,27,64,6,33,0,0,0,0],["Urología","UROLOGIA","IRUSTA PINEDA GONZALO ANDRES",100,37,63,6,106,17,28,16,63,6,21,0,0,0,0],["Urología","UROLOGIA","RIVERI LOPEZ ENRIQUE RODRIGO",90,21,69,8,98,5,29,19,69,8,2,0,0,0,0],["Urología","UROLOGIA","URRUTIA ARTEAGA CRISTIAN JESUS",60,30,30,1,61,3,22,13,30,1,17,0,0,0,0],["Urología","UROLOGIA","ZURITA MARTINEZ CARLOS ALFREDO AUGUSTO",138,2,136,6,144,11,132,2,136,6,0,0,0,0,0]]};
+const FMAP = {"Anestesiología":["ANESTESIA"],"Cardiología":["CARDIOLOGIA DE AD.","CARDIOLOGIA INF.","TRATAMIENTO ANTICOAGULANTE"],"Cirugía Digestiva (Alta)":["CIRUGIA ADULTOS"],"Cirugía General":["CIRUGIA ADULTOS","CIRUGIA ENDOSCOPICA","Cirugía General"],"Cirugía Pediátrica":["CIRUGIA INFANTIL"],"Cirugía Plástica Y Reparadora":["CIRUGIA PLASTICA"],"Cirugía Vascular Periférica":["CIRUGIA VASCULAR"],"Coloproctología (Cirugía Digestiva Baja)":["CIRUGIA ADULTOS"],"Dermatología":["DERMATOLOGIA","ENFERMEDADES DE TRANSMISION SE"],"Diabetología":["DIABETES MELLITUS INFANTL","DIABETOLOGIA"],"Endocrinología Adulto":["ENDOCRINOLOGIA","Endocrinología Adulto"],"Endocrinología Pediátrica":["ENDOCRINOLOGIA INFANTIL"],"Enfermedad Respiratoria De Adulto (Broncopulmonar)":["BRONCOPULMONAR ADU."],"Enfermedad Respiratoria Pediátrica (Broncopulmonar Infantil)":["BRONCOPULMONAR INF."],"Gastroenterología Adulto":["GASTROENTEROLOGIA AD."],"Gastroenterología Pediátrica":["GASTROENTEROLOGIA INF."],"Geriatría":["GERIATRIA"],"Hematología":["HEMATOLOGIA ADULTOS","HEMATOLOGIA INFANTIL"],"Infectología":["INFECTOLOGIA","INFECTOLOGIA INFANTIL"],"Inmunología":["ENFERMEDADES DE TRANSMISION SE","INMUNOLOGIA ADULTO","INMUNOLOGIA INFANTIL"],"MEDICINA FAMILIAR":["MEDICINA FAMILIAR"],"Mastología":["PAT.MAMARIA"],"Medicina Familiar":["MEDICINA FAMILIAR"],"Medicina Física Y Rehabilitación":["FISIATRIA","FISIATRIA INFANTIL"],"Medicina Interna":["ENFERMEDADES DE TRANSMISION SE","MEDICINA INTERNA","TRATAMIENTO ANTICOAGULANT"],"Medicina Paliativa Y De Manejo Del Dolor":["ALIVIO DEL DOLOR"],"Nefrología Adulto":["NEFROLOGIA ADULTOS","UNIDAD DE DIALISIS"],"Nefrología Pediátrica":["NEFROLOGIA INFANTIL"],"Neonatología":["NEONATOLOGIA"],"Neurocirugía":["NEUROCIRUGIA"],"Neurología Adulto":["NEUROLOGIA AD."],"Neurología Pediátrica":["NEUROLOGIA INF."],"Nutrición clínica":["NUTRIOLOGA ADULTO","NUTRIOLOGIA INFANTIL"],"Obstetricia Y Ginecología":["A.R.O.","CLIMATERIO","ENFERMEDADES DE TRANSMISION SE","FERTILIDAD","GINECOLOGIA","GINECOLOGIA INFANTIL","ONCO-GINECOLOGIA","PAT. CERVICAL","PISO PELVICO"],"Oftalmología":["OFTALMOLOGIA"],"Oncología Médica":["ONCOLOGIA"],"Otorrinolaringología":["OTORRINO"],"Pediatría":["PEDIATRIA"],"Psiquiatría Adulto":["PSIQUIATRIA"],"Psiquiatría Pediátrica Y De La Adolescencia":["PSIQUIATRIA INFANTIL"],"Reumatología":["REUMATOLOGIA"],"Traumatología Y Ortopedia":["ORTOPEDIA INFANTIL","TMT CADERA Y PELVIS","TMT RODILLA","TMT TOBILLO Y PIE","TRAUMATOLOGIA","TRAUMATOLOGIA HOMBRO","TRAUMATOLOGIA MUÑECA MANO"],"Urología":["UROLOGIA"]};
+const METAS_CNE   = {"Ginecología Oncológica":20,"Hematología":20,"Infectología":20,"Mastología":20,"Medicina Del Adolescente":20,"Medicina Del Deporte":20,"Medicina Materno Infantil":20,"Medicina Paliativa Y De Manejo Del Dolor":20,"Medicina Reproductiva E Infertilidad":20,"Neurorradiología":20,"Psiquiatría Adulto":20,"Psiquiatría Pediátrica Y De La Adolescencia":20,"Diabetología":25,"Endocrinología Adulto":25,"Endocrinología Pediátrica":25,"Enfermedad Respiratoria Pediátrica (Broncopulmonar Infantil)":25,"Inmunología":25,"Nefrología Adulto":25,"Nefrología Pediátrica":25,"Oncología Médica":25,"Radioterapia Oncológica":25,"Reumatología":25,"Cirugía De Cabeza, Cuello Y Maxilofacial":33,"Cirugía Plástica Y Reparadora":33,"Enfermedad Respiratoria De Adulto (Broncopulmonar)":33,"Gastroenterología Pediátrica":33,"Medicina Familiar":33,"Medicina Física Y Rehabilitación":33,"Neonatología":33,"Neurología Adulto":33,"Neurología Pediátrica":33,"Nutrición Clínica":33,"Nutrición clínica":33,"Pediatría":33,"Cardiología":40,"Cirugía Cardiovascular":40,"Cirugía Pediátrica":40,"Cirugía Tórax":40,"Gastroenterología Adulto":40,"Geriatría":40,"Medicina Interna":40,"Neurocirugía":40,"Obstetricia Y Ginecología":40,"Traumatología Y Ortopedia":40,"Urología":40,"Cirugía Digestiva (Alta)":45,"Cirugía General":45,"Cirugía Vascular Periférica":45,"Coloproctología (Cirugía Digestiva Baja)":45,"Dermatología":45,"Genética Clínica":45,"Oftalmología":45,"Otorrinolaringología":45,"Anestesiología":75};
+const METAS_ALTAS = {"Ginecología Oncológica":5,"Hematología":5,"Infectología":5,"Inmunología":5,"Mastología":5,"Medicina Paliativa Y De Manejo Del Dolor":5,"Nefrología Adulto":5,"Diabetología":7,"Endocrinología Pediátrica":7,"Enfermedad Respiratoria De Adulto (Broncopulmonar)":7,"Enfermedad Respiratoria Pediátrica (Broncopulmonar Infantil)":7,"Nefrología Pediátrica":7,"Reumatología":7,"Cardiología":10,"Cirugía De Cabeza, Cuello Y Maxilofacial":10,"Endocrinología Adulto":10,"Gastroenterología Adulto":10,"Gastroenterología Pediátrica":10,"Medicina Del Adolescente":10,"Medicina Reproductiva E Infertilidad":10,"Neurología Pediátrica":10,"Neurorradiología":10,"Nutrición Clínica":10,"Nutrición clínica":10,"Oncología Médica":10,"Psiquiatría Adulto":10,"Psiquiatría Pediátrica Y De La Adolescencia":10,"Urología":10,"Cirugía Plástica Y Reparadora":14,"Cirugía Vascular Periférica":14,"Coloproctología (Cirugía Digestiva Baja)":14,"Genética Clínica":14,"Medicina Del Deporte":14,"Medicina Familiar":14,"Medicina Física Y Rehabilitación":14,"Medicina Interna":14,"Medicina Materno Infantil":14,"Neurocirugía":14,"Neurología Adulto":14,"Obstetricia Y Ginecología":14,"Pediatría":14,"Radioterapia Oncológica":14,"Traumatología Y Ortopedia":14,"Cirugía Digestiva (Alta)":18,"Cirugía General":18,"Cirugía Tórax":18,"Dermatología":18,"Geriatría":18,"Neonatología":18,"Oftalmología":18,"Otorrinolaringología":18,"Cirugía Cardiovascular":25,"Cirugía Pediátrica":25,"Anestesiología":70};
+const PERIODOS_META = {"Enero":{"cne_global":33,"nsp_global":12}};
+
+const fmt = n => (n||0).toLocaleString('es-CL');
+const PP = 20;
+
+// Expand compact to objects
+function expand(raw){
+  return raw.map(r=>({
+    esp_rem:r[0],servicios:r[1],medico:r[2],
+    produccion:r[3],cne:r[4],ctrl:r[5],nsp:r[6],citado:r[7],
+    altas:r[8],ges:r[9],
+    cne_r7:r[10],ctrl_r7:r[11],nsp_r7:r[12],
+    cne_r30:r[13],ctrl_r30:r[14],
+    cne_r32:r[15],ctrl_r32:r[16],nsp_r32:r[17],
+    pct_cne:  r[3]>0?+(r[4]/r[3]*100).toFixed(1):0,
+    pct_nsp:  r[7]>0?+(r[6]/r[7]*100).toFixed(1):0,
+    pct_altas:r[3]>0?+(r[8]/r[3]*100).toFixed(1):0,
+  }));
+}
+
+let CUR_PERIOD='Enero';
+let MED=expand(RAW[CUR_PERIOD]);
+
+const clC=(p,esp)=>{const m=METAS_CNE[esp]||33;return p>=m?'ok':p>=m*.8?'wa':'lo';};
+const clN=(p)=>p<=12?'ok':p<=15?'wa':'lo';
+const clA=(p,esp)=>{const m=METAS_ALTAS[esp];if(!m)return'nd';return p>=m?'ok':p>=m*.8?'wa':'lo';};
+
+function calcTot(data){
+  const s=k=>data.reduce((a,r)=>a+(r[k]||0),0);
+  const prod=s('produccion'),nsp=s('nsp');
+  return{prod,nsp,cne:s('cne'),ctrl:s('ctrl'),altas:s('altas'),ges:s('ges'),
+    citado:prod+nsp,medicos:new Set(data.map(r=>r.medico)).size,
+    esps:new Set(data.map(r=>r.esp_rem)).size,
+    r7:s('cne_r7')+s('ctrl_r7'),nsp_r7:s('nsp_r7'),
+    cne_r7:s('cne_r7'),ctrl_r7:s('ctrl_r7'),
+    r30:s('cne_r30')+s('ctrl_r30'),cne_r30:s('cne_r30'),ctrl_r30:s('ctrl_r30'),
+    r32:s('cne_r32')+s('ctrl_r32'),cne_r32:s('cne_r32'),ctrl_r32:s('ctrl_r32'),nsp_r32:s('nsp_r32'),
+  };
+}
+
+function buildEspSummary(data){
+  const m={};
+  data.forEach(r=>{
+    if(!m[r.esp_rem])m[r.esp_rem]={esp_rem:r.esp_rem,prod:0,cne:0,ctrl:0,nsp:0,altas:0,ges:0,citado:0};
+    const e=m[r.esp_rem];
+    e.prod+=r.produccion;e.cne+=r.cne;e.ctrl+=r.ctrl;
+    e.nsp+=r.nsp;e.altas+=r.altas;e.ges+=r.ges;e.citado+=r.citado;
+  });
+  return Object.values(m).map(e=>({...e,
+    pct_cne:e.prod>0?+(e.cne/e.prod*100).toFixed(1):0,
+    pct_nsp:e.citado>0?+(e.nsp/e.citado*100).toFixed(1):0,
+    pct_altas:e.prod>0?+(e.altas/e.prod*100).toFixed(1):0,
+  }));
+}
+
+// ── RESUMEN ──────────────────────────────────────────────────
+let curEspRem='';
+function drawResumen(data, er){
+  const t=calcTot(data);
+  const metaCNE=er?(METAS_CNE[er]||33):33;
+  const metaAltas=er?METAS_ALTAS[er]:null;
+  const pC=t.prod>0?(t.cne/t.prod*100).toFixed(1):0;
+  const pN=t.citado>0?(t.nsp/t.citado*100).toFixed(1):0;
+  const pA=t.prod>0?(t.altas/t.prod*100).toFixed(1):0;
+  const cC=parseFloat(pC)>=metaCNE?'ok':parseFloat(pC)>=metaCNE*.8?'wa':'lo';
+  const cN=clN(parseFloat(pN));
+  const cA=metaAltas?(parseFloat(pA)>=metaAltas?'ok':parseFloat(pA)>=metaAltas*.8?'wa':'lo'):'neu';
+  const arc=v=>Math.min(v/100*63.6,63.6).toFixed(1);
+
+  document.getElementById('kpiBlock').innerHTML=`
+    <div class="kpi b"><div class="kl">Producción</div><div class="kv">${fmt(t.prod)}</div><div class="ks">${er||'Total período'}</div></div>
+    <div class="kpi r"><div class="kl">NSP</div><div class="kv">${fmt(t.nsp)}</div><div class="ks">${fmt(t.citado)} citados</div></div>
+    <div class="kpi a"><div class="kl">CNE</div><div class="kv">${fmt(t.cne)}</div><div class="ks">${pC}%</div></div>
+    <div class="kpi g"><div class="kl">Médicos</div><div class="kv">${t.medicos}</div><div class="ks">${t.esps} esp. REM</div></div>`;
+
+  document.getElementById('indsBlock').innerHTML=`
+    <div class="ind ${cC} an">
+      <div class="gauge"><svg viewBox="0 0 34 34"><circle class="gbg" cx="17" cy="17" r="12"/><circle class="gf" cx="17" cy="17" r="12" stroke-dasharray="${arc(pC)} 75.4"/></svg></div>
+      <div class="tag">CNE</div>
+      <div class="pct">${pC}%</div>
+      <div class="frac">${fmt(t.cne)} / ${fmt(t.prod)}</div>
+      <div class="ml"><span class="dot"></span>${er?`≥${metaCNE}% <strong>${parseFloat(pC)>=metaCNE?'✓':'✗'}</strong>`:'Meta ≥33% global'}</div>
+      ${!er?`<div class="mn">Selecciona esp. para meta específica</div>`:''}
+    </div>
+    <div class="ind ${cN} an">
+      <div class="gauge"><svg viewBox="0 0 34 34"><circle class="gbg" cx="17" cy="17" r="12"/><circle class="gf" cx="17" cy="17" r="12" stroke-dasharray="${arc(pN)} 75.4"/></svg></div>
+      <div class="tag">NSP</div>
+      <div class="pct">${pN}%</div>
+      <div class="frac">${fmt(t.nsp)} / ${fmt(t.citado)}</div>
+      <div class="ml"><span class="dot"></span>≤12% &nbsp;<strong>${parseFloat(pN)<=12?'✓ OK':'✗'}</strong></div>
+      <div class="mn">Sobre citados</div>
+    </div>
+    <div class="ind ${cA} an">
+      <div class="gauge"><svg viewBox="0 0 34 34"><circle class="gbg" cx="17" cy="17" r="12"/><circle class="gf" cx="17" cy="17" r="12" stroke-dasharray="${arc(pA)} 75.4"/></svg></div>
+      <div class="tag">Altas</div>
+      <div class="pct">${pA}%</div>
+      <div class="frac">${fmt(t.altas)} / ${fmt(t.prod)}</div>
+      <div class="ml"><span class="dot"></span>${metaAltas?`≥${metaAltas}% <strong>${parseFloat(pA)>=metaAltas?'✓':'✗'}</strong>`:'Varía por esp.'}</div>
+    </div>`;
+
+  document.getElementById('remsBlock').innerHTML=`
+    <div class="rc an">
+      <div class="rn">A07 Presencial</div>
+      <div class="rr"><span class="rk">CNE</span><span class="rv">${fmt(t.cne_r7)}</span></div>
+      <div class="rr"><span class="rk">Ctrl</span><span class="rv">${fmt(t.ctrl_r7)}</span></div>
+      <div class="rr"><span class="rk">NSP</span><span class="rv">${fmt(t.nsp_r7)}</span></div>
+      <div class="rtot"><span>Total</span><span class="rv">${fmt(t.r7)}</span></div>
+    </div>
+    <div class="rc an">
+      <div class="rn">A30 Tele</div>
+      <div class="rr"><span class="rk">CNE</span><span class="rv">${fmt(t.cne_r30)}</span></div>
+      <div class="rr"><span class="rk">Ctrl</span><span class="rv">${fmt(t.ctrl_r30)}</span></div>
+      <div class="rtot"><span>Total</span><span class="rv">${fmt(t.r30)}</span></div>
+    </div>
+    <div class="rc an">
+      <div class="rn">A32 Tel.</div>
+      <div class="rr"><span class="rk">CNE</span><span class="rv">${fmt(t.cne_r32)}</span></div>
+      <div class="rr"><span class="rk">Ctrl</span><span class="rv">${fmt(t.ctrl_r32)}</span></div>
+      <div class="rr"><span class="rk">NSP</span><span class="rv">${fmt(t.nsp_r32)}</span></div>
+      <div class="rtot"><span>Total</span><span class="rv">${fmt(t.r32)}</span></div>
+    </div>`;
+}
+
+// ── ESP TABLE ─────────────────────────────────────────────────
+let eSrt={c:'prod',d:-1}, espFilt=[], espEspRem='';
+function sE(c){eSrt.d=eSrt.c===c?eSrt.d*-1:-1;eSrt.c=c;drawEsp();}
+
+function onEspRemChange(){
+  espEspRem=document.getElementById('eEspRem').value;
+  const sel=document.getElementById('eEsp');
+  const prev=sel.value;
+  const svcs=espEspRem?FMAP[espEspRem]||[]:
+    [...new Set(MED.flatMap(r=>r.servicios.split(' / ').map(s=>s.trim())))].sort();
+  sel.innerHTML='<option value="">Todos</option>'+svcs.map(s=>`<option value="${s}"${s===prev?' selected':''}>${s}</option>`).join('');
+  filterEsp();
+}
+function filterEsp(){
+  const es=document.getElementById('eEsp').value;
+  let d=MED;
+  if(espEspRem) d=d.filter(r=>r.esp_rem===espEspRem);
+  if(es) d=d.filter(r=>r.servicios.includes(es));
+  espFilt=buildEspSummary(d);
+  document.getElementById('espCount').textContent=espFilt.length+' especialidades';
+  // Actualizar resumen con filtro
+  curEspRem=espEspRem;
+  drawResumen(d, espEspRem);
+  drawEsp();
+}
+function resetEsp(){document.getElementById('eEspRem').value='';document.getElementById('eEsp').value='';espEspRem='';onEspRemChange();drawResumen(MED,'');}
+
+function drawEsp(){
+  const data=[...espFilt].sort((a,b)=>eSrt.d*(a[eSrt.c]>b[eSrt.c]?1:a[eSrt.c]<b[eSrt.c]?-1:0));
+  const tb=document.getElementById('tbEsp');
+  if(!data.length){tb.innerHTML='<tr><td colspan="7" class="empty">Sin resultados</td></tr>';return;}
+  tb.innerHTML=data.map(d=>{
+    const mC=METAS_CNE[d.esp_rem]||33, mA=METAS_ALTAS[d.esp_rem]||null;
+    const cc=d.pct_cne>=mC?'ok':d.pct_cne>=mC*.8?'wa':'lo';
+    const cn=clN(d.pct_nsp);
+    const ca=mA?(d.pct_altas>=mA?'ok':d.pct_altas>=mA*.8?'wa':'lo'):'nd';
+    return`<tr>
+      <td><strong style="font-size:12px">${d.esp_rem}</strong></td>
+      <td class="r">${fmt(d.prod)}</td>
+      <td class="r"><div class="bw"><div class="bg2"><div class="bf ${cc}" style="width:${Math.min(d.pct_cne/mC/1.4*100,100)}%"></div></div><span class="pv ${cc}">${d.pct_cne}%</span></div></td>
+      <td class="r mc">≥${mC}%</td>
+      <td class="r"><div class="bw"><div class="bg2"><div class="bf ${cn}" style="width:${Math.min(d.pct_nsp/12/1.4*100,100)}%"></div></div><span class="pv ${cn}">${d.pct_nsp}%</span></div></td>
+      <td class="r"><div class="bw"><div class="bg2"><div class="bf ${ca}" style="width:${mA?Math.min(d.pct_altas/mA/1.4*100,100):0}%"></div></div><span class="pv ${ca}">${d.pct_altas}%</span></div></td>
+      <td class="r mc">${mA?'≥'+mA+'%':'S/D'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── MED TABLE ─────────────────────────────────────────────────
+let mSrt={c:'esp_rem',d:1}, mPg=1;
+function sM(c){mSrt.d=mSrt.c===c?mSrt.d*-1:1;mSrt.c=c;mPg=1;drawMed();}
+function filterMed(){mPg=1;drawMed();}
+function resetMed(){['mEspRem','mEsp','fCNE'].forEach(id=>document.getElementById(id).value='');document.getElementById('sMed').value='';onMedRemChange();}
+
+function onMedRemChange(){
+  const er=document.getElementById('mEspRem').value;
+  const sel=document.getElementById('mEsp');
+  const prev=sel.value;
+  const svcs=er?FMAP[er]||[]:
+    [...new Set(MED.flatMap(r=>r.servicios.split(' / ').map(s=>s.trim())))].sort();
+  sel.innerHTML='<option value="">Todos</option>'+svcs.map(s=>`<option value="${s}"${s===prev?' selected':''}>${s}</option>`).join('');
+  mPg=1;drawMed();
+}
+
+function getFiltMed(){
+  const er=document.getElementById('mEspRem').value;
+  const es=document.getElementById('mEsp').value;
+  const q=(document.getElementById('sMed')?.value||'').toLowerCase();
+  const fc=document.getElementById('fCNE').value;
+  return MED.filter(r=>{
+    if(er&&r.esp_rem!==er)return false;
+    if(es&&!r.servicios.includes(es))return false;
+    if(q&&!r.medico.toLowerCase().includes(q))return false;
+    if(fc){const m=METAS_CNE[r.esp_rem]||33,p=r.pct_cne;
+      if(fc==='ok'&&p<m)return false;if(fc==='wa'&&(p<m*.8||p>=m))return false;if(fc==='lo'&&p>=m*.8)return false;}
+    return true;
+  }).sort((a,b)=>{const va=a[mSrt.c],vb=b[mSrt.c];return typeof va==='string'?mSrt.d*va.localeCompare(vb):mSrt.d*(va-vb);});
+}
+
+function drawMed(){
+  const data=getFiltMed();
+  const pages=Math.max(1,Math.ceil(data.length/PP));
+  if(mPg>pages)mPg=pages;
+  const sl=data.slice((mPg-1)*PP,mPg*PP);
+  document.getElementById('medCount').textContent=data.length+' médicos';
+  const tb=document.getElementById('tbMed');
+  if(!sl.length){tb.innerHTML='<tr><td colspan="9" class="empty">Sin resultados</td></tr>';}
+  else tb.innerHTML=sl.map(r=>{
+    const mC=METAS_CNE[r.esp_rem]||33, mA=METAS_ALTAS[r.esp_rem]||null;
+    const cc=r.pct_cne>=mC?'ok':r.pct_cne>=mC*.8?'wa':'lo';
+    const cn=clN(r.pct_nsp);
+    const ca=mA?(r.pct_altas>=mA?'ok':r.pct_altas>=mA*.8?'wa':'lo'):'nd';
+    const ov=cc==='ok'&&cn==='ok'?'ok':(cc==='lo'||cn==='lo'?'lo':'wa');
+    return`<tr>
+      <td><div class="dim">${r.esp_rem}</div><div class="dim" style="font-size:10px">${r.servicios}</div></td>
+      <td><span class="mname">${r.medico}</span></td>
+      <td class="r">${fmt(r.produccion)}</td>
+      <td class="r"><div class="bw"><div class="bg2"><div class="bf ${cc}" style="width:${Math.min(r.pct_cne/mC/1.4*100,100)}%"></div></div><span class="pv ${cc}">${r.pct_cne}%</span></div></td>
+      <td class="r mc">≥${mC}%</td>
+      <td class="r"><div class="bw"><div class="bg2"><div class="bf ${cn}" style="width:${Math.min(r.pct_nsp/12/1.4*100,100)}%"></div></div><span class="pv ${cn}">${r.pct_nsp}%</span></div></td>
+      <td class="r"><div class="bw"><div class="bg2"><div class="bf ${ca}" style="width:${mA?Math.min(r.pct_altas/mA/1.4*100,100):0}%"></div></div><span class="pv ${ca}">${r.pct_altas}%</span></div></td>
+      <td class="r mc">${mA?'≥'+mA+'%':'S/D'}</td>
+      <td><span class="pill ${ov}">${{ok:'✓',wa:'⚠',lo:'✗'}[ov]}</span></td>
+    </tr>`;
+  }).join('');
+  const pag=document.getElementById('pagMed');
+  if(pages<=1){pag.innerHTML='';return;}
+  let h=`<span class="pi">${(mPg-1)*PP+1}–${Math.min(mPg*PP,data.length)} de ${data.length}</span>`;
+  h+=`<button class="pbtn" onclick="gP(${mPg-1})" ${mPg===1?'disabled':''}>‹</button>`;
+  const s=Math.max(1,mPg-2),e=Math.min(pages,mPg+2);
+  for(let p=s;p<=e;p++)h+=`<button class="pbtn ${p===mPg?'on':''}" onclick="gP(${p})">${p}</button>`;
+  h+=`<button class="pbtn" onclick="gP(${mPg+1})" ${mPg===pages?'disabled':''}>›</button>`;
+  pag.innerHTML=h;
+}
+function gP(p){mPg=p;drawMed();document.getElementById('scroll').scrollTop=0;}
+
+// ── DOWNLOADS ─────────────────────────────────────────────────
+function toCSV(rows,cols){const esc=v=>{const s=String(v==null?'':v);return s.includes(',')?`"${s}"`:s;};return[cols.join(','),...rows.map(r=>cols.map(c=>esc(r[c])).join(','))].join('\n');}
+function dlFile(csv,name){const b=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();}
+function downloadEsp(){const cols=['esp_rem','prod','cne','pct_cne','ctrl','nsp','pct_nsp','altas','pct_altas','ges'];dlFile(toCSV([...espFilt].sort((a,b)=>b.prod-a.prod),cols),`esp_cae_${CUR_PERIOD}2026.csv`);}
+function downloadMed(){const cols=['esp_rem','servicios','medico','produccion','cne','pct_cne','ctrl','nsp','pct_nsp','citado','altas','pct_altas','ges'];dlFile(toCSV(getFiltMed(),cols),`med_cae_${CUR_PERIOD}2026_filtro.csv`);}
+function downloadFull(){const cols=['esp_rem','servicios','medico','produccion','cne','ctrl','nsp','citado','pct_cne','pct_nsp','altas','pct_altas','ges','cne_r7','ctrl_r7','nsp_r7','cne_r30','ctrl_r30','cne_r32','ctrl_r32','nsp_r32'];dlFile(toCSV(MED,cols),`BASE_CAE_${CUR_PERIOD}2026.csv`);}
+
+// ── PERIOD CHANGE ─────────────────────────────────────────────
+function onPeriodChange(){
+  CUR_PERIOD=document.getElementById('selPeriod').value;
+  MED=expand(RAW[CUR_PERIOD]);
+  refreshAll();
+}
+function refreshAll(){
+  const espRems=[...new Set(MED.map(r=>r.esp_rem))].sort();
+  ['eEspRem','mEspRem'].forEach(id=>{
+    const sel=document.getElementById(id);const prev=sel.value;
+    sel.innerHTML='<option value="">Todas</option>'+espRems.map(e=>`<option value="${e}"${e===prev?' selected':''}>${e}</option>`).join('');
+  });
+  espEspRem=''; espFilt=buildEspSummary(MED);
+  document.getElementById('espCount').textContent=espFilt.length+' especialidades';
+  onMedRemChange();
+  drawResumen(MED,'');
+  drawEsp();
+  drawMed();
+}
+
+// ── SCREEN SWITCH ─────────────────────────────────────────────
+function showSc(id,el){
+  document.querySelectorAll('.sc').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  document.getElementById('sc-'+id).classList.add('on');
+  el.classList.add('on');
+  document.getElementById('scroll').scrollTop=0;
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+(function(){
+  const periods=Object.keys(RAW);
+  const sel=document.getElementById('selPeriod');
+  sel.innerHTML=periods.map(p=>`<option value="${p}">${p} 2026</option>`).join('');
+  CUR_PERIOD=periods[0];
+  MED=expand(RAW[CUR_PERIOD]);
+  refreshAll();
+})();
+</script>
+</body>
+</html>
